@@ -1,0 +1,36 @@
+{
+  "sender_rules": {
+    "newsletter@email.hm.com": {
+      "category": "Marketing",
+      "subcategory": "Retail Promotion",
+      "email_state": "promotional",
+      "importance": "low",
+      "action_required": false,
+      "recommended_action": "trash_candidate"
+    },
+
+    "shein@news.emailmarket.shein.com": {
+      "category": "Marketing",
+      "subcategory": "Retail Promotion",
+      "email_state": "promotional",
+      "importance": "low",
+      "action_required": false,
+      "recommended_action": "trash_candidate"
+    },
+
+    "hello@mkt.pacsun.com": {
+      "category": "Marketing",
+      "subcategory": "Retail Promotion",
+      "email_state": "promotional",
+      "importance": "low",
+      "action_required": false,
+      "recommended_action": "trash_candidate"
+    }
+  },
+
+  "domain_rules": {},
+
+  "protected_senders": [],
+
+  "protected_domains": []
+}

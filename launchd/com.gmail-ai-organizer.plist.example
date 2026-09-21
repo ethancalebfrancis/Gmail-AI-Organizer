@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.gmail-ai-organizer</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/ABSOLUTE/PATH/TO/Gmail-AI-Organizer/.venv/bin/python</string>
+        <string>/ABSOLUTE/PATH/TO/Gmail-AI-Organizer/main.py</string>
+        <string>--auto</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/ABSOLUTE/PATH/TO/Gmail-AI-Organizer</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/ABSOLUTE/PATH/TO/Gmail-AI-Organizer/logs/launchd.log</string>
+    <key>StandardErrorPath</key>
+    <string>/ABSOLUTE/PATH/TO/Gmail-AI-Organizer/logs/launchd-error.log</string>
+</dict>
+</plist>

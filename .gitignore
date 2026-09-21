@@ -1,0 +1,37 @@
+# Secrets / OAuth
+.env
+.env.*
+!.env.example
+credentials.json
+credentials*.json
+token.json
+token*.json
+
+# Local data / state
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+logs/
+*.log
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Build / archives
+build/
+dist/
+*.egg-info/
+*.zip
