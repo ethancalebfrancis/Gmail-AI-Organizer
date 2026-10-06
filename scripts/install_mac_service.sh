@@ -15,7 +15,25 @@ fi
 PYTHON="$ROOT/.venv/bin/python"
 "$PYTHON" -m pip install -r "$ROOT/requirements.txt"
 
+# Preflight configuration before registering a KeepAlive LaunchAgent. This
+# prevents a malformed .env from creating a crash/restart loop.
+(
+  cd "$ROOT"
+  "$PYTHON" - <<'PY'
+import config
+from database import initialize_database, migrate_database
+initialize_database()
+migrate_database()
+print("Configuration preflight passed.")
+print(f"Trash quarantine: {config.TRASH_QUARANTINE_DAYS} days")
+print(f"Historical quarantine: {config.HISTORICAL_QUARANTINE_DAYS} days")
+PY
+)
+
 mkdir -p "$HOME/Library/LaunchAgents" "$LOGDIR"
+: > "$LOGDIR/launchd.log"
+: > "$LOGDIR/launchd-error.log"
+
 cat > "$PLIST" <<PLISTEOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
