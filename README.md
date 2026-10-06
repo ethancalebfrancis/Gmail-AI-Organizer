@@ -2,7 +2,7 @@
 
 A production-oriented Python application that organizes Gmail with a hybrid of deterministic rules, learned sender/subject patterns, and OpenAI classification.
 
-It is designed for both **continuous Inbox maintenance** and **large historical mailbox cleanup**. The system prefers local rules whenever possible, uses AI only when the message is genuinely ambiguous, records every decision in SQLite, and places low-value mail in a reversible quarantine before it can reach Gmail Trash.
+It is designed for both **continuous Inbox maintenance** and **large historical mailbox cleanup**. The system prefers local rules whenever possible, uses AI only when a message is genuinely ambiguous, records decisions in SQLite, and places low-value mail in a reversible quarantine before it reaches Gmail Trash.
 
 ## Highlights
 
@@ -13,8 +13,9 @@ It is designed for both **continuous Inbox maintenance** and **large historical 
 - Local learning from repeated high-confidence historical classifications
 - SQLite-backed processing ledger and backlog cache
 - Safe `keep`, `archive`, `review`, and `trash_candidate` actions
-- 14-day trash quarantine with rescue checks for starred/restored/protected mail
+- Configurable trash quarantine with rescue checks for starred/restored/protected mail
 - Autonomous worker that drains the historical backlog, refreshes its mailbox cache daily, and then continues monitoring the Inbox
+- macOS launchd service with configuration preflight and status diagnostics
 - Dashboard and preview modes for visibility and auditing
 - GitHub Actions CI for compilation and unit tests
 
@@ -68,13 +69,20 @@ Each message is assigned:
 - `recommended_action`
 - `classification_source`
 
-The final action policy is intentionally more conservative than the raw model recommendation. Financial, security, school, career, shopping/order, receipt, travel, and personal categories are protected from automatic trashing.
+The final action policy is intentionally more conservative than the raw model recommendation. Financial, security, school, career, shopping/order, receipt, travel, event, and personal categories are protected from automatic trashing.
 
 ## Safety model
 
 `trash_candidate` does **not** immediately delete mail. The organizer applies `AI/Trash Candidates`, removes the message from the Inbox, and records the quarantine in SQLite. After the configured retention period, cleanup re-checks Gmail before moving the message to Trash.
 
 A message is rescued or protected if, among other safeguards, it is starred, restored to the Inbox, carries an important/action/review label, belongs to a protected category, or no longer carries the quarantine label.
+
+The default quarantine is 14 days. It can be shortened locally, for example:
+
+```env
+TRASH_QUARANTINE_DAYS=7
+HISTORICAL_QUARANTINE_DAYS=7
+```
 
 ## Modes
 
@@ -92,9 +100,64 @@ python main.py --historical-classify-run-preview
 python main.py --historical-classify-live
 ```
 
-## Local configuration
+## Quick start
 
-Copy `.env.example` to `.env`, provide `OPENAI_API_KEY`, and place a Google OAuth desktop client file at `credentials.json`. The first Gmail connection opens a browser authorization flow and writes `token.json` locally.
+```bash
+git clone https://github.com/ethancalebfrancis/Gmail-AI-Organizer.git
+cd Gmail-AI-Organizer
+
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+cp .env.example .env
+```
+
+Add `OPENAI_API_KEY` to `.env`, then place a Google OAuth desktop client file at `credentials.json`. The first Gmail connection opens a browser authorization flow and writes `token.json` locally.
+
+Run one foreground cycle first:
+
+```bash
+python main.py --once
+```
+
+Then install the background worker on macOS:
+
+```bash
+chmod +x scripts/*.sh
+./scripts/install_mac_service.sh
+```
+
+The installer validates the Python configuration before registering the KeepAlive LaunchAgent. A malformed `.env` therefore fails before launchd enters a restart loop.
+
+Check status at any time with:
+
+```bash
+./scripts/status_mac_service.sh
+```
+
+Remove the service with:
+
+```bash
+./scripts/uninstall_mac_service.sh
+```
+
+## Faster historical cleanup
+
+For a very large mailbox, the worker can be made more aggressive through local `.env` settings without changing source code:
+
+```env
+AUTO_INBOX_BATCH_SIZE=250
+AUTO_SENDER_POLICY_BATCH_SIZE=100
+AUTO_HISTORICAL_BULK_BATCH_SIZE=5000
+AUTO_PHASE3_BATCH_SIZE=500
+AUTO_ACTIVE_PAUSE_SECONDS=1
+AUTO_IDLE_SECONDS=60
+```
+
+These values increase throughput; the classification and protected-category safety rules remain unchanged.
+
+## Local state and secrets
 
 Sensitive/runtime files are intentionally excluded from Git:
 
@@ -104,6 +167,8 @@ Sensitive/runtime files are intentionally excluded from Git:
 - SQLite databases
 - logs
 - virtual environments
+
+Keep API keys in `.env`. Do not store an OpenAI key in launchd's global environment or paste it into logs, screenshots, issues, or commits.
 
 ## Autonomous operation
 
@@ -117,10 +182,6 @@ Sensitive/runtime files are intentionally excluded from Git:
 6. continue polling the Inbox after the historical backlog reaches zero.
 
 Processing is resumable because successful Gmail actions are recorded immediately. If the process stops, previously completed message IDs are skipped on restart.
-
-### macOS background service
-
-The repository includes `scripts/install_mac_service.sh`, which installs a per-user launchd agent using the project's virtual environment. It starts the autonomous worker at login, restarts it if it exits, and writes runtime output under `logs/`. `scripts/uninstall_mac_service.sh` removes the service.
 
 ## Testing
 
